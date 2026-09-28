@@ -19,20 +19,25 @@ type Streamer = {
   url?: string
   streamUrl?: string
   isLive: boolean
-  rating: number | null
+  index: number
 }
 
-type ViewMode = 'all' | 'top-rated' | 'live-only' | 'favorites'
+type ViewMode = 'all' | 'live-only' | 'favorites'
 
 const STREAMERS_URL = 'https://api.chess.com/pub/streamers'
-const RATING_STATS_FIELD = 'chess_blitz.last.rating'
-const FEATURED_USERNAMES = new Set([
+const POPULAR_USERNAMES = new Set([
   'magnuscarlsen',
   'nihalsarin',
   'gothamchess',
   'hikaru',
   'anastasiia',
 ])
+
+const VIEW_OPTIONS: Array<{ value: ViewMode; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'live-only', label: 'Live Only' },
+  { value: 'favorites', label: 'Favorites' },
+]
 
 const hasUsableStreamUrl = (value?: string) => {
   if (typeof value !== 'string') {
@@ -53,34 +58,16 @@ const hasUsableStreamUrl = (value?: string) => {
   }
 }
 
-async function fetchRatingsByUsername(
-  usernames: string[],
-  signal: AbortSignal,
-): Promise<Record<string, number | null>> {
-  const entries = await Promise.all(
-    usernames.map(async (username) => {
-      try {
-        const response = await fetch(
-          `https://api.chess.com/pub/player/${username}/stats`,
-          { signal },
-        )
+const getPreferredStreamAction = (streamer: { streamUrl?: string; url?: string; isLive: boolean }) => {
+  if (streamer.isLive) {
+    return { href: streamer.streamUrl, label: 'Watch stream', isProfile: false }
+  }
 
-        if (!response.ok) {
-          return [username, null] as const
-        }
+  if (typeof streamer.url === 'string' && streamer.url.trim()) {
+    return { href: streamer.url, label: 'View Profile', isProfile: true }
+  }
 
-        const payload = (await response.json()) as {
-          chess_blitz?: { last?: { rating?: number } }
-        }
-
-        return [username, payload?.chess_blitz?.last?.rating ?? null] as const
-      } catch {
-        return [username, null] as const
-      }
-    }),
-  )
-
-  return Object.fromEntries(entries)
+  return { href: undefined, label: 'View Profile', isProfile: true }
 }
 
 function App() {
@@ -127,17 +114,7 @@ function App() {
           return
         }
 
-        const usernames = validEntries.map((entry) => entry.username.trim())
-        const ratingsByUsername = await fetchRatingsByUsername(
-          usernames,
-          controller.signal,
-        )
-
-        if (currentRequestId !== latestRequestRef.current) {
-          return
-        }
-
-        const mappedStreamers = validEntries.map((entry) => {
+        const mappedStreamers = validEntries.map((entry, index) => {
           const username = entry.username.trim()
 
           return {
@@ -147,7 +124,7 @@ function App() {
             url: entry.url,
             streamUrl: entry.twitch_url ?? entry.stream_url,
             isLive: Boolean(entry.is_live),
-            rating: ratingsByUsername[username] ?? null,
+            index,
           }
         })
 
@@ -198,31 +175,22 @@ function App() {
           return false
         }
 
-        if (view === 'top-rated' && streamer.rating === null) {
-          return false
-        }
-
         return true
       })
       .sort((left, right) => {
         if (view === 'all') {
-          const leftFeatured = FEATURED_USERNAMES.has(left.username.toLowerCase()) ? 0 : 1
-          const rightFeatured = FEATURED_USERNAMES.has(right.username.toLowerCase()) ? 0 : 1
+          const leftPopular = POPULAR_USERNAMES.has(left.username.toLowerCase()) ? 0 : 1
+          const rightPopular = POPULAR_USERNAMES.has(right.username.toLowerCase()) ? 0 : 1
 
-          if (leftFeatured !== rightFeatured) {
-            return leftFeatured - rightFeatured
+          if (leftPopular !== rightPopular) {
+            return leftPopular - rightPopular
           }
-        }
 
-        const leftHasRating = typeof left.rating === 'number'
-        const rightHasRating = typeof right.rating === 'number'
+          if (left.isLive !== right.isLive) {
+            return Number(right.isLive) - Number(left.isLive)
+          }
 
-        if (leftHasRating !== rightHasRating) {
-          return Number(rightHasRating) - Number(leftHasRating)
-        }
-
-        if (leftHasRating && rightHasRating) {
-          return (right.rating ?? 0) - (left.rating ?? 0)
+          return left.index - right.index
         }
 
         return left.displayName.localeCompare(right.displayName)
@@ -288,12 +256,7 @@ function App() {
               </label>
 
               <div className="view-switcher" role="tablist" aria-label="Streamers views">
-                {[
-                  { value: 'all', label: 'All' },
-                  { value: 'top-rated', label: 'Top Rated' },
-                  { value: 'live-only', label: 'Live Only' },
-                  { value: 'favorites', label: 'Favorites' },
-                ].map((option) => (
+                {VIEW_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
@@ -301,7 +264,7 @@ function App() {
                     aria-selected={view === option.value}
                     aria-pressed={view === option.value}
                     className={view === option.value ? 'view-button active' : 'view-button'}
-                    onClick={() => setView(option.value as ViewMode)}
+                    onClick={() => setView(option.value)}
                   >
                     {option.label}
                   </button>
@@ -323,21 +286,24 @@ function App() {
               </div>
             ) : (
               <ul className="streamer-grid" aria-label="Chess.com streamers">
-                {visibleStreamers.map(({ username, displayName, avatar, rating, streamUrl, isLive }) => {
+                {visibleStreamers.map(({ username, displayName, avatar, streamUrl, isLive, url }) => {
                   const isFavorite = favoriteSet.has(username)
-                  const streamLinkAvailable = hasUsableStreamUrl(streamUrl)
+                  const preferredAction = getPreferredStreamAction({ streamUrl, url, isLive })
+                  const streamLinkAvailable = hasUsableStreamUrl(preferredAction.href)
 
                   return (
                     <li key={username} className="streamer-card">
                       <div className="streamer-topline">
-                        <div className="streamer-avatar-wrap">
-                          {avatar ? (
-                            <img className="streamer-avatar" src={avatar} alt="" />
-                          ) : (
-                            <div className="streamer-avatar-fallback" aria-hidden="true">
-                              {username.slice(0, 1).toUpperCase()}
-                            </div>
-                          )}
+                        <div className="streamer-identity">
+                          <div className="streamer-avatar-wrap">
+                            {avatar ? (
+                              <img className="streamer-avatar" src={avatar} alt="" />
+                            ) : (
+                              <div className="streamer-avatar-fallback" aria-hidden="true">
+                                {username.slice(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <button
@@ -356,41 +322,50 @@ function App() {
                       <div className="streamer-details">
                         <div className="streamer-header-row">
                           <h2>{displayName}</h2>
-                          <span
-                            className={isLive ? 'status-badge live' : 'status-badge offline'}
-                            aria-label={isLive ? 'Streamer is live' : 'Streamer is offline'}
-                          >
-                            <span className="status-dot" aria-hidden="true" />
-                            {isLive ? 'Live' : 'Offline'}
-                          </span>
                         </div>
                         <p className="username">@{username}</p>
-                        <p className="rating">
-                          {rating === null
-                            ? 'Blitz rating unavailable'
-                            : `${RATING_STATS_FIELD} ${rating}`}
-                        </p>
+                        <span
+                          className={isLive ? 'status-badge live' : 'status-badge offline'}
+                          aria-label={isLive ? 'Streamer is live' : 'Streamer is offline'}
+                        >
+                          <span className="status-dot" aria-hidden="true" />
+                          {isLive ? 'Live' : 'Offline'}
+                        </span>
                       </div>
 
                       <div className="streamer-actions">
                         {streamLinkAvailable ? (
                           <a
-                            href={streamUrl}
+                            href={preferredAction.href}
                             target="_blank"
                             rel="noreferrer noopener"
                             className="watch-link"
-                            aria-label={`Open ${displayName}'s stream in a new tab`}
+                            aria-label={
+                              preferredAction.isProfile
+                                ? `Open ${displayName}'s Chess.com profile in a new tab`
+                                : `Open ${displayName}'s stream in a new tab`
+                            }
                           >
-                            Watch stream
+                            {preferredAction.label}
                           </a>
                         ) : (
                           <button
                             type="button"
                             className="watch-link unavailable"
-                            onClick={() => window.alert('This stream link is unavailable at the moment.')}
-                            aria-label={`Stream link unavailable for ${displayName}`}
+                            onClick={() =>
+                              window.alert(
+                                preferredAction.isProfile
+                                  ? 'This profile link is unavailable at the moment.'
+                                  : 'This stream link is unavailable at the moment.',
+                              )
+                            }
+                            aria-label={
+                              preferredAction.isProfile
+                                ? `Profile link unavailable for ${displayName}`
+                                : `Stream link unavailable for ${displayName}`
+                            }
                           >
-                            No stream link
+                            {preferredAction.label}
                           </button>
                         )}
                       </div>
