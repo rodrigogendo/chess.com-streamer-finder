@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import chessLogo from './assets/chess-logo.png'
 import './App.css'
 
 type StreamerApiItem = {
@@ -6,7 +7,9 @@ type StreamerApiItem = {
   name?: string
   avatar?: string
   url?: string
+  twitch_url?: string
   stream_url?: string
+  is_live?: boolean
 }
 
 type Streamer = {
@@ -15,6 +18,7 @@ type Streamer = {
   avatar?: string
   url?: string
   streamUrl?: string
+  isLive: boolean
   rating: number | null
 }
 
@@ -29,6 +33,25 @@ const FEATURED_USERNAMES = new Set([
   'hikaru',
   'anastasiia',
 ])
+
+const hasUsableStreamUrl = (value?: string) => {
+  if (typeof value !== 'string') {
+    return false
+  }
+
+  const trimmedValue = value.trim()
+
+  if (!trimmedValue || !/^https?:\/\//i.test(trimmedValue)) {
+    return false
+  }
+
+  try {
+    new URL(trimmedValue)
+    return true
+  } catch {
+    return false
+  }
+}
 
 async function fetchRatingsByUsername(
   usernames: string[],
@@ -122,7 +145,8 @@ function App() {
             displayName: entry.name?.trim() || username,
             avatar: entry.avatar,
             url: entry.url,
-            streamUrl: entry.stream_url,
+            streamUrl: entry.twitch_url ?? entry.stream_url,
+            isLive: Boolean(entry.is_live),
             rating: ratingsByUsername[username] ?? null,
           }
         })
@@ -170,7 +194,7 @@ function App() {
           return false
         }
 
-        if (view === 'live-only' && !streamer.streamUrl) {
+        if (view === 'live-only' && !streamer.isLive) {
           return false
         }
 
@@ -218,9 +242,12 @@ function App() {
   return (
     <div className="app-shell">
       <header className="page-header">
-        <div>
-          <p className="eyebrow">Chess.com</p>
-          <h1>Live streamers</h1>
+        <div className="brand-block">
+          <img className="brand-logo" src={chessLogo} alt="Chess.com logo" />
+          <div>
+            <p className="eyebrow">Chess.com</p>
+            <h1>The Streamer&apos;s Gambit</h1>
+          </div>
         </div>
       </header>
 
@@ -296,8 +323,9 @@ function App() {
               </div>
             ) : (
               <ul className="streamer-grid" aria-label="Chess.com streamers">
-                {visibleStreamers.map(({ username, displayName, avatar, rating, streamUrl }) => {
+                {visibleStreamers.map(({ username, displayName, avatar, rating, streamUrl, isLive }) => {
                   const isFavorite = favoriteSet.has(username)
+                  const streamLinkAvailable = hasUsableStreamUrl(streamUrl)
 
                   return (
                     <li key={username} className="streamer-card">
@@ -328,30 +356,42 @@ function App() {
                       <div className="streamer-details">
                         <div className="streamer-header-row">
                           <h2>{displayName}</h2>
-                          <span className={streamUrl ? 'status-badge live' : 'status-badge offline'}>
-                            {streamUrl ? 'Live' : 'Offline'}
+                          <span
+                            className={isLive ? 'status-badge live' : 'status-badge offline'}
+                            aria-label={isLive ? 'Streamer is live' : 'Streamer is offline'}
+                          >
+                            <span className="status-dot" aria-hidden="true" />
+                            {isLive ? 'Live' : 'Offline'}
                           </span>
                         </div>
                         <p className="username">@{username}</p>
                         <p className="rating">
                           {rating === null
-                            ? `Blitz rating unavailable`
+                            ? 'Blitz rating unavailable'
                             : `${RATING_STATS_FIELD} ${rating}`}
                         </p>
                       </div>
 
                       <div className="streamer-actions">
-                        {streamUrl ? (
+                        {streamLinkAvailable ? (
                           <a
                             href={streamUrl}
                             target="_blank"
                             rel="noreferrer noopener"
                             className="watch-link"
+                            aria-label={`Open ${displayName}'s stream in a new tab`}
                           >
                             Watch stream
                           </a>
                         ) : (
-                          <span className="watch-link unavailable">No stream link</span>
+                          <button
+                            type="button"
+                            className="watch-link unavailable"
+                            onClick={() => window.alert('This stream link is unavailable at the moment.')}
+                            aria-label={`Stream link unavailable for ${displayName}`}
+                          >
+                            No stream link
+                          </button>
                         )}
                       </div>
                     </li>

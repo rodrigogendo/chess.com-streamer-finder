@@ -10,11 +10,31 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
+  padding: 20px 22px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #0f172a 0%, #1f2937 100%);
+  color: #f8fafc;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-logo {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px;
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: #7a5af8;
+  color: #b7c7ff;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -24,6 +44,7 @@
 .page-header h1 {
   margin: 0;
   font-size: clamp(2rem, 3vw, 3rem);
+  color: #f8fafc;
 }
 
 .page-content {
@@ -68,6 +89,13 @@
 .watch-link {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.view-button:hover,
+.favorite-button:hover,
+.watch-link:hover,
+.retry-button:hover {
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.12);
 }
 
 .view-button {
@@ -247,22 +275,48 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   border-radius: 999px;
-  padding: 0.25rem 0.55rem;
+  padding: 0.28rem 0.7rem;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+}
+
 .status-badge.live {
-  background: #dcfce7;
-  color: #166534;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge.live .status-dot {
+  animation: pulse 1.4s infinite;
 }
 
 .status-badge.offline {
   background: #f3f4f6;
   color: #475569;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 
 .username {
@@ -287,12 +341,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid transparent;
   border-radius: 999px;
   padding: 0.65rem 0.9rem;
   background: #5f5ef4;
   color: #fff;
   text-decoration: none;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .watch-link:hover {
@@ -304,6 +360,10 @@
   color: #475569;
   border: 1px solid #dfe7f1;
   text-decoration: none;
+}
+
+.watch-link.unavailable:hover {
+  background: #ebf0f5;
 }
 
 .sr-only {
@@ -321,6 +381,19 @@
 @media (max-width: 640px) {
   .app-shell {
     padding-inline: 16px;
+  }
+
+  .page-header {
+    padding: 16px 18px;
+  }
+
+  .brand-block {
+    align-items: flex-start;
+  }
+
+  .brand-logo {
+    width: 46px;
+    height: 46px;
   }
 
   .streamer-grid {
