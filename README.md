@@ -1,6 +1,6 @@
 # The Streamer’s Gambit
 
-[GitHub Pages](https://your-username.github.io/react-n1/)
+[GitHub Pages](https://rodrigogendo.github.io/chess.com-streamer-finder/)
 
 A React + TypeScript app that displays live and offline Chess.com streamers, supports search and filtering, and lets users save favorites.
 
