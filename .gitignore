@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 
-.docs/braindump.nd
+.docs/braindump.md
 .docs/PRD.md
 .docs/tasks.md
 
