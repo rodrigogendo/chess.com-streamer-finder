@@ -321,7 +321,7 @@ function App() {
 
                       <div className="streamer-details">
                         <div className="streamer-header-row">
-                          <h2>{displayName}</h2>
+                          <h2 title={displayName}>{displayName}</h2>
                         </div>
                         <p className="username">@{username}</p>
                         <span
