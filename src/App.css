@@ -112,7 +112,7 @@
 }
 
 .view-button.active {
-  background: linear-gradient(135deg, #1d5b43 0%, #2f7d5d 100%);
+  background: #286d52;
   border-color: #7ad8a2;
   color: #f0fdf4;
 }
@@ -268,10 +268,6 @@
   min-width: 0;
 }
 
-.streamer-header-row {
-  display: block;
-}
-
 .streamer-details h2 {
   margin: 0;
   font-size: 1.15rem;
@@ -309,11 +305,12 @@
 }
 
 .status-badge.live {
-  background: rgba(62, 114, 86, 0.22);
-  color: #8ce0a8;
+  background: rgba(34, 197, 94, 0.24);
+  color: #a3f7b4;
 }
 
 .status-badge.live .status-dot {
+  background: #ef4444;
   animation: pulse 1.4s infinite;
 }
 
@@ -332,12 +329,6 @@
   100% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
   }
-}
-
-.username {
-  margin: 0;
-  color: #9cb8a8;
-  font-size: 0.88rem;
 }
 
 .streamer-actions {
@@ -407,10 +398,5 @@
 
   .streamer-grid {
     grid-template-columns: 1fr;
-  }
-
-  .streamer-header-row {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }

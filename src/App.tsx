@@ -64,10 +64,10 @@ const getPreferredStreamAction = (streamer: { streamUrl?: string; url?: string; 
   }
 
   if (typeof streamer.url === 'string' && streamer.url.trim()) {
-    return { href: streamer.url, label: 'View Profile', isProfile: true }
+    return { href: streamer.url, label: 'View Chess.com Profile', isProfile: true }
   }
 
-  return { href: undefined, label: 'View Profile', isProfile: true }
+  return { href: undefined, label: 'View Chess.com Profile', isProfile: true }
 }
 
 function App() {
@@ -320,10 +320,7 @@ function App() {
                       </div>
 
                       <div className="streamer-details">
-                        <div className="streamer-header-row">
-                          <h2 title={displayName}>{displayName}</h2>
-                        </div>
-                        <p className="username">@{username}</p>
+                        <h2 title={displayName}>{displayName}</h2>
                         <span
                           className={isLive ? 'status-badge live' : 'status-badge offline'}
                           aria-label={isLive ? 'Streamer is live' : 'Streamer is offline'}

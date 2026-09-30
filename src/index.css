@@ -16,6 +16,7 @@
 
 html {
   background: #181a1d;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -25,6 +26,7 @@ body {
   background:
     radial-gradient(circle at top, rgba(122, 216, 162, 0.06), transparent 28%),
     #181a1d;
+  background-attachment: fixed;
 }
 
 button,
